@@ -1,0 +1,50 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Плюс → Готово · движение</title>
+<style>@import url('/src/styles/tokens.css');@import url('/src/styles/base.css');@import url('/src/screens/onboarding/onboarding-flow.css');
+body{margin:0;background:var(--surface-subtle);color:var(--text-primary);font-family:Onest,sans-serif;padding:32px}main{max-width:1240px;margin:auto}h1{font-size:28px;font-weight:500;margin:0 0 12px}p{line-height:1.5}header p{max-width:700px;color:var(--text-secondary)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:32px}article{min-width:0}h2{font-size:18px;font-weight:500}article p{min-height:72px;color:var(--text-secondary);font-size:14px}.stage{height:300px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:34px;border-radius:40px;background:radial-gradient(ellipse at 22% 0%,var(--accent-100),transparent 70%),linear-gradient(var(--accent-400),var(--accent-600) 58%,var(--accent-800));overflow:hidden}.own-main-btn{flex:none;width:80px;min-width:0;padding:0;transition:none}.own-main-btn__icon,.own-main-btn__text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;white-space:nowrap;transition:none!important}.own-main-btn__text{opacity:0;pointer-events:none}.controls{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.control{font:inherit;border:0;border-radius:24px;background:var(--surface-default);color:var(--text-primary);padding:12px 20px;cursor:pointer;min-height:44px}select{font:inherit;border:0;border-radius:24px;padding:12px;background:var(--surface-default)}.note{font-size:13px;color:var(--text-secondary)}@media(max-width:800px){.grid{grid-template-columns:1fr}body{padding:20px}.stage{height:240px}article p{min-height:0}}</style>
+<style>
+.grid{gap:16px;grid-template-columns:1fr}.stage{height:540px;display:block;padding:0;max-width:390px;margin:auto;border-radius:40px;background:radial-gradient(ellipse at 15% 8%,var(--accent-100),transparent 65%),linear-gradient(var(--accent-300),var(--accent-600) 65%,var(--accent-800))}.scene-title{position:absolute;top:50px;left:24px;right:24px;text-align:center;font-size:24px;font-weight:500;color:var(--text-on-action)}.task{position:absolute;top:130px;left:16px;right:16px;padding:20px;border-radius:var(--radius-l);background:var(--surface-default);font-size:16px;opacity:0}.task small{display:block;margin-top:8px;color:var(--text-secondary);font-size:14px}.source{position:absolute;bottom:34px;left:50%;margin-left:0;translate:-50% 0}.fly{position:absolute;left:50%;top:calc(100% - 60px);width:80px;height:52px;margin:-26px 0 0 -40px;border-radius:100px;opacity:0;pointer-events:none;padding:0;min-width:0;background:#ffffff70;backdrop-filter:blur(12px) saturate(1.8);box-shadow:0 0 0 .5px #0000000f,0 6px 24px #0000001a,inset 0 1px 1px #fff,inset 0 -1px 1px #ffffffa6;display:flex;align-items:center;justify-content:center;color:var(--text-primary)}.fly svg{width:24px;height:24px;opacity:0}.stage .own-main-btn__text{font-size:16px}article p{min-height:100px}
+</style>
+<main><header><h1>Из «Готово» — в новый плюс</h1><p>Первый вариант смены кнопки сохранён. Сравниваем только вылет шарика и его раскрытие под задачей. Нажмите «Повторить». Можно посмотреть движение в замедлении.</p></header><div class="controls"><button class="control" id="all">Повторить</button><button class="control" id="reset">Сбросить</button><select aria-label="Скорость"><option value="1">Обычная скорость</option><option value="2.5">Замедленно ×2,5</option></select></div><section class="grid"></section><p class="note">Изолированная проба · основной экран не изменён · повторное нажатие запускает заново.</p><a href="/motion/finale-button.html">Предыдущее сравнение</a></main>
+<script>
+const configs=[{name:'Прямой бросок · доработанный',description:'Бросок с начальным импульсом: быстрый вылет, замедление на подъёме, перелёт и возврат. Пружина подхватывает скорость шарика; поверхность раскрывается с более сильным отскоком.',arc:0,flight:380,mode:1}];
+const glyph='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+configs.forEach(c=>{const a=document.createElement('article');a.innerHTML=`<h2>${c.name}</h2><p>${c.description}</p><div class="stage"><div class="scene-title">Ваши задачи</div><div class="task">Купить продукты<small>Без даты</small></div><button class="own-main-btn source" aria-label="Показать переход"><span class="own-main-btn__icon">${glyph}</span><span class="own-main-btn__text">Готово</span></button><div class="fly">${glyph}</div></div>`;document.querySelector('.grid').append(a);c.stage=a.querySelector('.stage');c.button=a.querySelector('button');c.button.onclick=()=>play(c)});
+function reset(c){(c.animations||[]).forEach(a=>a.cancel());c.animations=[];const b=c.button;b.style.width='80px';b.children[0].style.opacity=1;b.children[1].style.opacity=0;c.stage.querySelector('.fly').style.opacity=0;c.stage.querySelector('.task').style.opacity=0}
+function physicalFrames(distance){
+ const dt=1/240,frames=[];
+ // Ballistic launch: initial impulse, then constant downward acceleration.
+ // At interception the spring inherits the exact position and velocity.
+ const arrival=.30,arrivalVelocity=-190;
+ const acceleration=2*(arrivalVelocity*arrival-distance)/(arrival*arrival);
+ const launchVelocity=arrivalVelocity-acceleration*arrival;
+ let y=0,vy=launchVelocity,sx=.225,sy=18/52,vx=0,vs=0;
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)};
+ for(let i=0;i<=288;i++){
+  const t=i*dt;
+  if(t<=arrival){y=launchVelocity*t+.5*acceleration*t*t;vy=launchVelocity+acceleration*t;}
+  else {vy+=(260*(distance-y)-15*vy)*dt;y+=vy*dt;}
+  const growth=smooth((t-.24)/.105);
+  if(i){
+   vx+=(430*(.225+.775*growth-sx)-15*vx)*dt;sx+=vx*dt;
+   vs+=(370*(18/52+(1-18/52)*growth-sy)-14*vs)*dt;sy+=vs*dt;
+  }
+  const stretch=t<arrival?.18*Math.sin(Math.PI*t/arrival):0;
+  frames.push({offset:i/288,opacity:smooth(t/.025),transform:`translate(0px,${y}px) scale(${sx-stretch*.26},${sy+stretch})`});
+ }
+ frames[288]={offset:1,opacity:1,transform:`translate(0px,${distance}px) scale(1,1)`};
+ return frames;
+}
+function play(c){reset(c);const rate=Number(document.querySelector('select').value),b=c.button,fly=c.stage.querySelector('.fly'),task=c.stage.querySelector('.task'),svg=fly.firstElementChild;
+const dx=0,dy=260-(c.stage.clientHeight-60);
+b.style.width='127px';b.children[0].style.opacity=0;b.children[1].style.opacity=1;task.style.opacity=1;fly.style.opacity=1;fly.style.transform=`translate(${dx}px,${dy}px)`;svg.style.opacity=1;
+if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+const anim=(el,frames,duration,delay=0,easing='linear',fill='backwards')=>{c.animations.push(el.animate(frames,{duration:duration*rate,delay:delay*rate,easing,fill}))};
+const frames=[];for(let i=0;i<=160;i++){const t=i/160;const z=.72,w=13*Math.sqrt(1-z*z);const v=i===160?1:1-Math.exp(-z*13*t)*(Math.cos(w*t)+z/Math.sqrt(1-z*z)*Math.sin(w*t));frames.push({offset:t,width:`${80+47*v}px`})}anim(b,frames,520);anim(b.children[0],[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.72)'}],166);anim(b.children[1],[{opacity:0,transform:'translateY(4px) scale(.94)'},{opacity:1,transform:'none'}],322,94,'cubic-bezier(.16,1,.3,1)');anim(task,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'none'}],360,0,'cubic-bezier(.16,1,.3,1)');
+// One integration for flight and expansion: no velocity reset at arrival.
+const motion=physicalFrames(dy);
+anim(fly,motion,1200,180);
+anim(svg,[{opacity:0,transform:'scale(.86)'},{opacity:1,transform:'scale(1)'}],200,520,'cubic-bezier(.16,1,.3,1)');
+
+}
+document.querySelector('#all').onclick=()=>configs.forEach(play);document.querySelector('#reset').onclick=()=>configs.forEach(reset);
+</script></html>
